@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Authors>Krzysztof Bazan</Authors>
+    <Description>Posnet Cash Register Protocol implementation.</Description>
+    <Copyright>© 2024 Krzysztof Bazan</Copyright>
+    <RepositoryUrl>https://github.com/nazabk/PosnetCashRegisterProtocol</RepositoryUrl>
+    <Title>Posnet Cash Register Protocol implementation</Title>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/nazabk/PosnetCashRegisterProtocol</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>POSNET NEO 2.01</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
+</Project>
