@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Serializers for PosnetCashRegisterProtocol</Title>
+    <Copyright>© 2024 Krzysztof Bazan</Copyright>
+    <Authors>Krzysztof Bazan</Authors>
+    <Description>Binary and JSON Serializers for POSNET frames.</Description>
+    <RepositoryUrl>https://github.com/nazabk/PosnetCashRegisterProtocol</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/nazabk/PosnetCashRegisterProtocol</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>POSNET NEO 2.01</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
+    <PackageReference Include="PosnetCashRegisterProtocol" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>
