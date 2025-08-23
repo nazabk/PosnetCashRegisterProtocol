@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PosnetCashRegisterProtocol"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PosnetCashRegisterProtocol.Serializers", "PosnetCashRegisterProtocol.Serializers\PosnetCashRegisterProtocol.Serializers.csproj", "{73C2BA19-5D65-4EE6-8CEA-5A2A869FFC48}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PosnetCashRegisterProtocol.Tests", "PosnetCashRegisterProtocol.Tests\PosnetCashRegisterProtocol.Tests.csproj", "{8B61D445-FEEF-48F2-B394-36C8DF668181}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -22,11 +24,15 @@ Global
 		{5001912F-9975-4758-B039-BF6B87899C86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5001912F-9975-4758-B039-BF6B87899C86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5001912F-9975-4758-B039-BF6B87899C86}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5001912F-9975-4758-B039-BF6B87899C86}.Release|Any CPU.Build.0 = Release|Any CPU		
+		{5001912F-9975-4758-B039-BF6B87899C86}.Release|Any CPU.Build.0 = Release|Any CPU
 		{73C2BA19-5D65-4EE6-8CEA-5A2A869FFC48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{73C2BA19-5D65-4EE6-8CEA-5A2A869FFC48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73C2BA19-5D65-4EE6-8CEA-5A2A869FFC48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73C2BA19-5D65-4EE6-8CEA-5A2A869FFC48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B61D445-FEEF-48F2-B394-36C8DF668181}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B61D445-FEEF-48F2-B394-36C8DF668181}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B61D445-FEEF-48F2-B394-36C8DF668181}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B61D445-FEEF-48F2-B394-36C8DF668181}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
