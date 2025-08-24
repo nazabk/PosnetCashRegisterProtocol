@@ -15,6 +15,7 @@
     <PackageTags>POSNET NEO 2.01</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

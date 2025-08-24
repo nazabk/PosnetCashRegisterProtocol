@@ -14,12 +14,19 @@ public static class FrameWriter
     /// </summary>
     /// <param name="stream">Binary stream.</param>
     /// <param name="frame"><see cref="Bcd"/>.</param>
-    public static void WriteFrame(this System.IO.Stream stream, Frame frame)
+    public static void WriteFrame(this System.IO.Stream stream, Frame frame) => WriteFrameMemory(stream, frame.FrameMemory);
+
+    /// <summary>
+    /// Writes a frame memory to the <paramref name="stream"/>, adding <see cref="ESpecialChar"/> control characters.
+    /// </summary>
+    /// <param name="stream">Binary stream.</param>
+    /// <param name="frame"><see cref="Bcd"/>.</param>
+    public static void WriteFrameMemory(this System.IO.Stream stream, ReadOnlyMemory<byte> memory)
     {
         stream.Write(Specials, 0, 1);
         stream.Write(Specials, 1, 1);
 
-        var data = frame.FrameMemory.Span[1..^1];
+        var data = memory.Span[1..^1];
         for (int i = 0; i < data.Length; i++)
         {
             if (data[i] == (byte)ESpecialChar.SYN)

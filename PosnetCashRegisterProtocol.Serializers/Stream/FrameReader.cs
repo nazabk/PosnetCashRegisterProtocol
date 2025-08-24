@@ -26,6 +26,29 @@ public static class FrameReader
     /// <exception cref="InvalidDataException">Thrown when an invalid <see cref="Frame"/> is received.</exception>
     public static Frame ReadFrame(this System.IO.Stream stream, Action<ReadOnlyMemory<byte>, string>? onFlush = null)
     {
+        var memory = ReadFrameMemory(stream, onFlush);
+
+        try
+        {
+            return new Frame(memory);
+        }
+        catch (Exception ex)
+        {
+            onFlush?.Invoke(memory, ex.Message);
+            throw new InvalidDataException(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Reads a frame data from <paramref name="stream"/>, taking into account
+    /// occurrences of control characters <see cref="ESpecialChar"/>.
+    /// </summary>
+    /// <param name="stream">Binary stream.</param>
+    /// <param name="onFlush">Invalid data handler.</param>
+    /// <returns>Frame memory.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when an <see cref="ESpecialChar.CAN"/> character is detected.</exception>
+    public static ReadOnlyMemory<byte> ReadFrameMemory(this System.IO.Stream stream, Action<ReadOnlyMemory<byte>, string>? onFlush = null)
+    {
         using var buffer = new ArrayPoolBufferWriter<byte>();
 
         byte value = default;
@@ -75,15 +98,7 @@ public static class FrameReader
             buffer.Write(value);
         }
 
-        try
-        {
-            return new Frame(buffer.WrittenMemory.ToArray());
-        }
-        catch (Exception ex)
-        {
-            onFlush?.Invoke(buffer.WrittenMemory, ex.Message);
-            throw new InvalidDataException(ex.Message);
-        }
+        return buffer.WrittenMemory.ToArray();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
