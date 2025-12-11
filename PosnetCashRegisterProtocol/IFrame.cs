@@ -6,7 +6,8 @@ namespace PosnetCashRegisterProtocol;
 /// <remarks>
 /// Based on <see cref="SKF-I-DEV-49"/> - "SPECYFIKACJA PROTOKOŁU KAS POSNET NEO XL EJ 2.01".
 /// </remarks>
-public interface IFrame : IReadOnlyList<object>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "IFrame is more than just fields collection.")]
+public interface IFrame : IReadOnlyCollection<object>
 {
     /// <summary>
     /// Frame field <see cref="FLAGS"/>.

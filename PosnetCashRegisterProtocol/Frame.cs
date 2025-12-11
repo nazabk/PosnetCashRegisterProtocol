@@ -11,18 +11,24 @@ namespace PosnetCashRegisterProtocol;
 /// </summary>
 public sealed class Frame : IFrame
 {
-    private const ushort FlagsOffset = 1;
-    private const ushort TokenOffset = 3;
-    private const ushort FlenOffset = 7;
-    private const ushort FldNumOffset = 9;
-    private const ushort CommandOffset = 11;
-    private const ushort FieldsOffset = 13;
+    private const ushort ByteSize = 1;     // sizeof(byte)
+    private const ushort ShortSize = 2;    // sizeof(ushort)
+    private const ushort LongSize = 4;     // sizeof(uint)
+    private const ushort BcdSize = 6;      // size of BCD
 
+    private const int StxOffset = 0;
+    private const int FlagsOffset = 1;
+    private const int TokenOffset = 3;
+    private const int FlenOffset = 7;
+    private const int FldNumOffset = 9;
+    private const int CommandOffset = 11;
+    private const int FieldsOffset = 13;
+
+    private static readonly Index EtxOffset = new(1, true);
     private static readonly Index CrcOffset = new(3, true);
     private static readonly Encoding TextEncoding;
 
-    private readonly ReadOnlyMemory<byte> _bytes;
-    private readonly List<ushort> _indexes;
+    private readonly ReadOnlyMemory<byte> _frameBytes;
 
     static Frame()
     {
@@ -42,17 +48,7 @@ public sealed class Frame : IFrame
     /// <returns><see cref="Frame"/>.</returns>
     /// <exception cref="InvalidCastException">Thrown when any data field format is invalid.</exception>
     public static Frame CreateZeroFLen(ushort flags, uint token, ushort command, params object[] fields)
-    {
-        var memory = CreateFrameMemory(out var indexes, flags, token, command, fields);
-
-        var length = (ushort)0;
-        MemoryMarshal.Write(memory.Span[FlenOffset..], in length);
-
-        var crc = CalculateCRC(memory.Span[FlagsOffset..CrcOffset]);
-        MemoryMarshal.Write(memory.Span[CrcOffset..], in crc);
-
-        return new Frame(memory, indexes);
-    }
+        => new(flags, token, command, fields, flen: 0);
 
     /// <summary>
     /// Creates <see cref="Frame"/>.
@@ -64,104 +60,71 @@ public sealed class Frame : IFrame
     /// <returns><see cref="Frame"/>.</returns>
     /// <exception cref="InvalidCastException">Thrown when any data field format is invalid.</exception>
     public Frame(ushort flags, uint token, ushort command, params object[] fields)
-    {
-        var memory = CreateFrameMemory(out _indexes, flags, token, command, fields);
-
-        var crc = CalculateCRC(memory.Span[FlagsOffset..CrcOffset]);
-        MemoryMarshal.Write(memory.Span[CrcOffset..], in crc);
-
-        _bytes = memory;
-    }
-
-    /// <inheritdoc cref="Frame(ReadOnlyMemory{byte}, ushort)" />
-    public Frame(ReadOnlyMemory<byte> bytes) : this(bytes, CalculateCRC(bytes.Span[FlagsOffset..CrcOffset]))
+        : this(flags, token, command, fields, flen: null)
     { }
 
-    /// <summary>
-    /// Creates <see cref="Frame"/> from read only memory.
-    /// </summary>
-    /// <param name="bytes">Binary frame representation without <see cref="Enums.ESpecialChar"/> control characters.</param>
-    /// <param name="crc">Frame checksum.</param>
-    /// <exception cref="ArgumentException">Thrown when the frame format is invalid.</exception>
-    /// <exception cref="InvalidCastException">Thrown when any data field format is invalid.</exception>
-    public Frame(ReadOnlyMemory<byte> bytes, ushort crc)
+    /// <inheritdoc cref="Frame(ReadOnlyMemory{byte}, ushort)" />
+    public Frame(ReadOnlyMemory<byte> memory)
     {
-        if (bytes.Span[0] != (byte)ESpecialChar.STX)
+        _frameBytes = memory;
+
+        if (_frameBytes.Span[StxOffset] != (byte)ESpecialChar.STX)
         {
             throw new ArgumentException($"Missing STX.");
         }
 
-        if (bytes.Span[^1] != (byte)ESpecialChar.ETX)
+        if (_frameBytes.Span[EtxOffset] != (byte)ESpecialChar.ETX)
         {
             throw new ArgumentException($"Missing ETX.");
         }
 
-        _bytes = bytes;
-
-        if (Crc != crc)
+        if (Crc != CalculateCRC(_frameBytes.Span[FlagsOffset..CrcOffset]))
         {
-            throw new ArgumentException($"Invalid CRC.", nameof(bytes));
+            throw new ArgumentException($"Invalid CRC.");
         }
 
-        _indexes = [];
+        var count = 0;
         var offset = FieldsOffset;
-        while (offset < bytes.Length - 3)
+        var length = CrcOffset.GetOffset(_frameBytes.Length);
+
+        while (offset < length)
         {
-            _indexes.Add(offset);
-            offset += (char)bytes.Span[offset] switch
-            {
-                'S' => (ushort)(GetTextDataLength(bytes.Span[(offset + 1)..]) + 1),
-                'B' => 2, // sizeof(byte) + 1
-                'V' => 3, // sizeof(ushort) + 1
-                'L' => 5, // sizeof(uint) + 1
-                'N' => 7, // size of BCD + 1,
-                _ => throw new InvalidCastException($"Not recognized data type: : {bytes.Span[offset]}."),
-            };
+            count++;
+            offset += GetFieldSize(_frameBytes.Span, offset);
         }
 
-        if (offset != bytes.Length - 3 || FldNum != _indexes.Count)
+        if (offset != length || count != FldNum)
         {
             throw new ArgumentException($"Data fields corrupted.");
         }
     }
 
-    private Frame(ReadOnlyMemory<byte> bytes, List<ushort> indexes)
+    private Frame(ushort flags, uint token, ushort command, object[] fields, ushort? flen)
     {
-        _bytes = bytes;
-        _indexes = indexes;
-    }
-
-    private static Memory<byte> CreateFrameMemory(out List<ushort> indexes, ushort flags, uint token, ushort command, params object[] fields)
-    {
-        ushort flen = FieldsOffset;
+        ushort length = FieldsOffset;
         var fldNum = fields.Length;
 
-        indexes = [];
         for (int i = 0; i < fldNum; i++)
         {
-            indexes.Add(flen);
-            flen += fields[i] switch
-            {
-                string text => (ushort)(TextEncoding.GetByteCount(text) + 2), // text.Length + \0 + type
-                byte => 2,// sizeof(byte) + 1
-                ushort => 3,// sizeof(ushort) + 1
-                uint => 5,// sizeof(uint) + 1
-                Bcd => 7,// size of BCD + 1
-                _ => throw new InvalidCastException($"Not allowed data type : {fields[i]}."),
-            };
+            length += GetFieldSize(fields[i]);
         }
 
-        flen += 3;
+        length += (ushort)CrcOffset.Value;
 
-        Memory<byte> memory = new byte[flen];
+        Memory<byte> memory = new byte[length];
         var span = memory.Span;
 
-        span[0] = (byte)ESpecialChar.STX;
-        span[^1] = (byte)ESpecialChar.ETX;
+        span[StxOffset] = (byte)ESpecialChar.STX;
+        span[EtxOffset] = (byte)ESpecialChar.ETX;
+
+        if (flen.HasValue)
+        {
+            length = flen.Value;
+        }
 
         MemoryMarshal.Write(span[FlagsOffset..], in flags);
         MemoryMarshal.Write(span[TokenOffset..], in token);
-        MemoryMarshal.Write(span[FlenOffset..], in flen);
+        MemoryMarshal.Write(span[FlenOffset..], in length);
         MemoryMarshal.Write(span[FldNumOffset..], in fldNum);
         MemoryMarshal.Write(span[CommandOffset..], in command);
 
@@ -180,30 +143,34 @@ public sealed class Frame : IFrame
 
                 case byte b:
                     span[index++] = (byte)'B';
-                    span[index++] = b;
+                    span[index] = b;
+                    index += ByteSize;
                     break;
 
                 case ushort v:
                     span[index++] = (byte)'V';
                     MemoryMarshal.Write(span[index..], in v);
-                    index += 2;
+                    index += ShortSize;
                     break;
 
                 case uint l:
                     span[index++] = (byte)'L';
                     MemoryMarshal.Write(span[index..], in l);
-                    index += 4;
+                    index += LongSize;
                     break;
 
                 case Bcd n:
                     span[index++] = (byte)'N';
                     n.Bytes().CopyTo(span[index..]);
-                    index += 6;
+                    index += BcdSize;
                     break;
             }
         }
 
-        return memory;
+        var crc = CalculateCRC(span[FlagsOffset..CrcOffset]);
+        MemoryMarshal.Write(span[CrcOffset..], in crc);
+
+        _frameBytes = memory;
     }
 
     #endregion
@@ -220,45 +187,46 @@ public sealed class Frame : IFrame
 
     public ushort Crc => MemoryMarshal.AsRef<ushort>(FrameMemory.Span[CrcOffset..]);
 
-    public ReadOnlyMemory<byte> FrameMemory => _bytes;
+    public ReadOnlyMemory<byte> FrameMemory => _frameBytes;
 
-    #region IReadOnlyList implementation
+    #region IReadOnlyCollection implementation
 
-    public int Count => _indexes.Count;
+    public int Count => FldNum;
 
-    public object this[int index]
-    {
-        get
-        {
-            var offset = _indexes[index];
-            return FrameMemory.Span[offset++] switch
-            {
-                (byte)'S' => TextEncoding.GetString(FrameMemory.Span.Slice(offset, GetTextDataLength(FrameMemory.Span[offset..]) - 1)),
-                (byte)'B' => FrameMemory.Span[offset],
-                (byte)'V' => MemoryMarshal.AsRef<ushort>(FrameMemory.Span[offset..]),
-                (byte)'L' => MemoryMarshal.AsRef<uint>(FrameMemory.Span[offset..]),
-                (byte)'N' => new Bcd(FrameMemory.Span.Slice(offset, 6)),
-                _ => throw new InvalidCastException($"Not recognized data type : {FrameMemory.Span[_indexes[index]]}."),
-            };
-        }
-    }
-
-    public IEnumerator<object> GetEnumerator() => new FieldsEnumerator(this);
+    public IEnumerator<object> GetEnumerator() => new FieldsEnumerator(FrameMemory);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    private sealed class FieldsEnumerator(Frame source) : object(), IEnumerator<object>
+    private sealed class FieldsEnumerator(ReadOnlyMemory<byte> bytes) : object(), IEnumerator<object>
     {
-        private readonly Frame _enumerated = source;
-        private int _index = -1;
+        private readonly int _offsetLimit = CrcOffset.GetOffset(bytes.Length);
 
-        public object Current => _enumerated[_index];
+        private int _offset;
+        private int _shift = FieldsOffset;
+
+        public object Current => GetField(bytes.Span, _offset);
 
         public void Dispose() { }
 
-        public bool MoveNext() => ++_index < _enumerated.Count;
+        public bool MoveNext()
+        {
+            _offset += _shift;
 
-        public void Reset() => _index = -1;
+            if (_offset < _offsetLimit)
+            {
+                _shift = GetFieldSize(bytes.Span, _offset);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Reset()
+        {
+            _offset = 0;
+            _shift = FieldsOffset;
+        }
     }
 
     #endregion
@@ -280,7 +248,7 @@ public sealed class Frame : IFrame
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetTextDataLength(ReadOnlySpan<byte> bytes)
+    private static int GetTextLength(ReadOnlySpan<byte> bytes)
     {
         var length = bytes.IndexOf((byte)0);
         if (length < 0)
@@ -290,4 +258,37 @@ public sealed class Frame : IFrame
 
         return ++length;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ushort GetFieldSize(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset] switch
+    {
+        'S' => (ushort)(GetTextLength(frameBytes[(offset + 1)..]) + 1),
+        'B' => ByteSize + 1,
+        'V' => ShortSize + 1,
+        'L' => LongSize + 1,
+        'N' => BcdSize + 1,
+        _ => throw new InvalidCastException($"Not recognized data type: {frameBytes[offset]} at {offset}."),
+    };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ushort GetFieldSize(object field) => field switch
+    {
+        string text => (ushort)(TextEncoding.GetByteCount(text) + 2), // text.Length + \0 + type
+        byte => ByteSize + 1,
+        ushort => ShortSize + 1,
+        uint => LongSize + 1,
+        Bcd => BcdSize + 1,
+        _ => throw new InvalidCastException($"Not allowed data type : {field}."),
+    };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static object GetField(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset++] switch
+    {
+        'S' => TextEncoding.GetString(frameBytes.Slice(offset, GetTextLength(frameBytes[offset..]) - 1)),
+        'B' => frameBytes[offset],
+        'V' => MemoryMarshal.AsRef<ushort>(frameBytes[offset..]),
+        'L' => MemoryMarshal.AsRef<uint>(frameBytes[offset..]),
+        'N' => new Bcd(frameBytes.Slice(offset, 6)),
+        _ => throw new InvalidCastException($"Not recognized data type : {frameBytes[offset]} at {offset}."),
+    };
 }
