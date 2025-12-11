@@ -90,7 +90,9 @@ public static class FrameReader
                         break;
 
                     case (byte)ESpecialChar.CAN:
-                        onFlush?.Invoke(buffer.WrittenMemory, "CAN detected");
+                        try { onFlush?.Invoke(buffer.WrittenMemory, "CAN detected"); }
+                        catch { }
+
                         throw new OperationCanceledException("CAN detected.");
                 }
             }
