@@ -59,16 +59,6 @@ public class FrameConverter : JsonConverter<Frame>
                     throw new InvalidDataException("Invalid CRC.");
                 }
 
-                if (frame.FldNum > 0 && frame.FldNum != fldNum)
-                {
-                    throw new InvalidDataException("Invalid FLD_NUM.");
-                }
-
-                if (frame.FLen != flen)
-                {
-                    throw new InvalidDataException("Invalid FLEN.");
-                }
-
                 return frame;
             }
 
