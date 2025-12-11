@@ -15,7 +15,7 @@
     <PackageTags>POSNET NEO 2.01</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
-    <PackageReference Include="PosnetCashRegisterProtocol" Version="1.1.0" />
+    <PackageReference Include="PosnetCashRegisterProtocol" Version="1.1.1" />
   </ItemGroup>
 
 </Project>
