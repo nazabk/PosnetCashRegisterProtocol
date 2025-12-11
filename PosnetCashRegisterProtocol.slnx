@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="PosnetCashRegisterProtocol.Serializers/PosnetCashRegisterProtocol.Serializers.csproj" />
+  <Project Path="PosnetCashRegisterProtocol.Tests/PosnetCashRegisterProtocol.Tests.csproj" />
+  <Project Path="PosnetCashRegisterProtocol/PosnetCashRegisterProtocol.csproj" />
+</Solution>
