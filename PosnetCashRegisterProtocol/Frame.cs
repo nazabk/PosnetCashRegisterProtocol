@@ -11,22 +11,22 @@ namespace PosnetCashRegisterProtocol;
 /// </summary>
 public sealed class Frame : IFrame
 {
-    private const ushort ByteSize = 1;     // sizeof(byte)
-    private const ushort ShortSize = 2;    // sizeof(ushort)
-    private const ushort LongSize = 4;     // sizeof(uint)
-    private const ushort BcdSize = 6;      // size of BCD
+    public const ushort ByteSize = 1;     // sizeof(byte)
+    public const ushort ShortSize = 2;    // sizeof(ushort)
+    public const ushort LongSize = 4;     // sizeof(uint)
+    public const ushort BcdSize = 6;      // size of BCD
 
-    private const int StxOffset = 0;
-    private const int FlagsOffset = 1;
-    private const int TokenOffset = 3;
-    private const int FlenOffset = 7;
-    private const int FldNumOffset = 9;
-    private const int CommandOffset = 11;
-    private const int FieldsOffset = 13;
+    public const int StxOffset = 0;
+    public const int FlagsOffset = 1;
+    public const int TokenOffset = 3;
+    public const int FlenOffset = 7;
+    public const int FldNumOffset = 9;
+    public const int CommandOffset = 11;
+    public const int FieldsOffset = 13;
 
-    private static readonly Index EtxOffset = new(1, true);
-    private static readonly Index CrcOffset = new(3, true);
-    private static readonly Encoding TextEncoding;
+    public static readonly Index EtxOffset = new(1, true);
+    public static readonly Index CrcOffset = new(3, true);
+    public static readonly Encoding TextEncoding;
 
     private readonly ReadOnlyMemory<byte> _frameBytes;
 
@@ -232,7 +232,7 @@ public sealed class Frame : IFrame
     #endregion
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ushort CalculateCRC(ReadOnlySpan<byte> data)
+    public static ushort CalculateCRC(ReadOnlySpan<byte> data)
     {
         ushort crc = 0;
         foreach (byte b in data)
@@ -248,7 +248,7 @@ public sealed class Frame : IFrame
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetTextLength(ReadOnlySpan<byte> bytes)
+    public static int GetTextLength(ReadOnlySpan<byte> bytes)
     {
         var length = bytes.IndexOf((byte)0);
         if (length < 0)
@@ -260,7 +260,7 @@ public sealed class Frame : IFrame
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ushort GetFieldSize(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset] switch
+    public static ushort GetFieldSize(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset] switch
     {
         'S' => (ushort)(GetTextLength(frameBytes[(offset + 1)..]) + 1),
         'B' => ByteSize + 1,
@@ -271,7 +271,7 @@ public sealed class Frame : IFrame
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ushort GetFieldSize(object field) => field switch
+    public static ushort GetFieldSize(object field) => field switch
     {
         string text => (ushort)(TextEncoding.GetByteCount(text) + 2), // text.Length + \0 + type
         byte => ByteSize + 1,
@@ -282,7 +282,7 @@ public sealed class Frame : IFrame
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static object GetField(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset++] switch
+    public static object GetField(ReadOnlySpan<byte> frameBytes, int offset) => (char)frameBytes[offset++] switch
     {
         'S' => TextEncoding.GetString(frameBytes.Slice(offset, GetTextLength(frameBytes[offset..]) - 1)),
         'B' => frameBytes[offset],
