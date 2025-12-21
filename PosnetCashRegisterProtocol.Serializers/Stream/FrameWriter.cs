@@ -1,4 +1,8 @@
 using PosnetCashRegisterProtocol.Enums;
+using System;
+using System.Buffers;
+using System.IO;
+using System.IO.Pipelines;
 
 namespace PosnetCashRegisterProtocol.Serializers.Stream;
 
@@ -7,37 +11,93 @@ namespace PosnetCashRegisterProtocol.Serializers.Stream;
 /// </summary>
 public static class FrameWriter
 {
-    private static readonly byte[] Specials = [(byte)ESpecialChar.SYN, (byte)ESpecialChar.STX, (byte)ESpecialChar.ETX];
-
     /// <summary>
-    /// Writes a <see cref="Frame"/> to the <paramref name="stream"/>, adding <see cref="ESpecialChar"/> control characters.
+    /// Writes a <see cref="Frame"/> to the <paramref name="stream"/>, 
+    /// adding <see cref="ESpecialChar"/> control characters.
     /// </summary>
     /// <param name="stream">Binary stream.</param>
-    /// <param name="frame"><see cref="Bcd"/>.</param>
-    public static void WriteFrame(this System.IO.Stream stream, Frame frame) => WriteFrameMemory(stream, frame.FrameMemory);
+    /// <param name="frame"><see cref="Frame"/>.</param>
+    public static void WriteFrame(this System.IO.Stream stream, Frame frame) =>
+        WriteFrameMemory(stream, frame.FrameMemory);
 
     /// <summary>
-    /// Writes a frame memory to the <paramref name="stream"/>, adding <see cref="ESpecialChar"/> control characters.
+    /// Writes asynchronously a <see cref="Frame"/> to the <paramref name="stream"/>, 
+    /// adding <see cref="ESpecialChar"/> control characters.
     /// </summary>
     /// <param name="stream">Binary stream.</param>
-    /// <param name="frame"><see cref="Bcd"/>.</param>
+    /// <param name="frame"><see cref="Frame"/>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Awaitable task.</returns>
+    public static ValueTask WriteFrameAsync(
+        this System.IO.Stream stream,
+        Frame frame,
+        CancellationToken cancellationToken) =>
+        WriteFrameMemoryAsync(stream, frame.FrameMemory, cancellationToken);
+
+    /// <summary>
+    /// Writes a frame memory to the <paramref name="stream"/>, 
+    /// adding <see cref="ESpecialChar"/> control characters.
+    /// </summary>
+    /// <param name="stream">Binary stream.</param>
+    /// <param name="frame"><see cref="Frame"/>.</param>
     public static void WriteFrameMemory(this System.IO.Stream stream, ReadOnlyMemory<byte> memory)
     {
-        stream.Write(Specials, 0, 1);
-        stream.Write(Specials, 1, 1);
+        Span<byte> buffer = stackalloc byte[CalculateBufferLength(memory)];
+        Serialize(memory, buffer);
+        stream.Write(buffer);
+    }
 
-        var data = memory.Span[1..^1];
-        for (int i = 0; i < data.Length; i++)
+    /// <summary>
+    /// Writes asynchronously a frame memory to the <paramref name="stream"/>, 
+    /// adding <see cref="ESpecialChar"/> control characters.
+    /// </summary>
+    /// <param name="stream">Binary stream.</param>
+    /// <param name="frame"><see cref="Frame"/>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Awaitable task.</returns>
+    public static async ValueTask WriteFrameMemoryAsync(
+        this System.IO.Stream stream,
+        ReadOnlyMemory<byte> memory,
+        CancellationToken cancellationToken)
+    {
+        var bufferLength = CalculateBufferLength(memory);
+        using var buffer = MemoryPool<byte>.Shared.Rent(bufferLength);
+        Serialize(memory, buffer.Memory.Span);
+        await stream.WriteAsync(buffer.Memory[..bufferLength], cancellationToken);
+    }
+
+    private static void Serialize(ReadOnlyMemory<byte> frameMemory, Span<byte> buffer)
+    {
+        var index = 0;
+
+        buffer[index++] = (byte)ESpecialChar.SYN;
+        buffer[index++] = (byte)ESpecialChar.STX;
+
+        for (int i = 1; i < frameMemory.Length - 1; i++)
         {
-            if (data[i] == (byte)ESpecialChar.SYN)
+            if (frameMemory.Span[i] == (byte)ESpecialChar.SYN)
             {
-                stream.Write(Specials, 0, 1);
+                buffer[index++] = (byte)ESpecialChar.SYN;
             }
 
-            stream.WriteByte(data[i]);
+            buffer[index++] = frameMemory.Span[i];
         }
 
-        stream.Write(Specials, 0, 1);
-        stream.Write(Specials, 2, 1);
+        buffer[index++] = (byte)ESpecialChar.SYN;
+        buffer[index] = (byte)ESpecialChar.ETX;
+    }
+
+    private static int CalculateBufferLength(ReadOnlyMemory<byte> memory)
+    {
+        int length = memory.Length + 2;
+        foreach (var mark in memory.Span[1..^1])
+        {
+            if (mark == (byte)ESpecialChar.SYN)
+            {
+                length++;
+            }
+        }
+
+        return length;
     }
 }
