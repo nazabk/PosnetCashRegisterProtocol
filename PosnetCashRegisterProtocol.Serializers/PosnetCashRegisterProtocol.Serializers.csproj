@@ -27,7 +27,10 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
-    <PackageReference Include="PosnetCashRegisterProtocol" Version="1.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PosnetCashRegisterProtocol\PosnetCashRegisterProtocol.csproj" />
   </ItemGroup>
 
 </Project>
