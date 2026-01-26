@@ -99,6 +99,19 @@ public sealed class Frame : IFrame
         }
     }
 
+    /// <summary>
+    /// Initializes a new instance of the Frame class by copying the data from an existing Frame instance.
+    /// </summary>
+    /// <remarks>The new Frame instance contains a deep copy of the frame memory from the specified Frame.
+    /// Changes to the memory of one instance do not affect the other.</remarks>
+    /// <param name="other">The Frame instance to copy data from. Cannot be null.</param>
+    public Frame(Frame other)
+    {
+        var memory = new byte[other.FrameMemory.Length];
+        FrameMemory.CopyTo(memory);
+        _frameBytes = memory;
+    }
+
     private Frame(ushort flags, uint token, ushort command, object[] fields, ushort? flen)
     {
         ushort length = FieldsOffset;
@@ -172,6 +185,8 @@ public sealed class Frame : IFrame
 
         _frameBytes = memory;
     }
+
+    private Frame() { }
 
     #endregion
 
