@@ -108,7 +108,7 @@ public sealed class Frame : IFrame
     public Frame(Frame other)
     {
         var memory = new byte[other.FrameMemory.Length];
-        FrameMemory.CopyTo(memory);
+        other.FrameMemory.CopyTo(memory);
         _frameBytes = memory;
     }
 
