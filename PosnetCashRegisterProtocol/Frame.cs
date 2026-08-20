@@ -63,7 +63,12 @@ public sealed class Frame : IFrame
         : this(flags, token, command, fields, flen: null)
     { }
 
-    /// <inheritdoc cref="Frame(ReadOnlyMemory{byte}, ushort)" />
+    /// <summary>
+    /// Creates <see cref="Frame"/>.
+    /// </summary>
+    /// <param name="memory">Frame memory.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="memory"/> does 
+    /// not contain valid frame.</exception>
     public Frame(ReadOnlyMemory<byte> memory)
     {
         _frameBytes = memory;
@@ -185,8 +190,6 @@ public sealed class Frame : IFrame
 
         _frameBytes = memory;
     }
-
-    private Frame() { }
 
     #endregion
 
