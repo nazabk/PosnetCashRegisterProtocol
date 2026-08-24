@@ -105,12 +105,12 @@ public sealed class Frame : IFrame
     }
 
     /// <summary>
-    /// Initializes a new instance of the Frame class by copying the data from an existing Frame instance.
+    /// Initializes a new instance of the Frame class by copying the data from an existing <see cref="IFrame"/> instance.
     /// </summary>
     /// <remarks>The new Frame instance contains a deep copy of the frame memory from the specified Frame.
     /// Changes to the memory of one instance do not affect the other.</remarks>
     /// <param name="other">The Frame instance to copy data from. Cannot be null.</param>
-    public Frame(Frame other)
+    public Frame(IFrame other)
     {
         var memory = new byte[other.FrameMemory.Length];
         other.FrameMemory.CopyTo(memory);

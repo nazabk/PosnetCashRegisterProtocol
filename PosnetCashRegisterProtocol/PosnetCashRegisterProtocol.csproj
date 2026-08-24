@@ -15,7 +15,7 @@
     <PackageTags>POSNET NEO 2.01</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-	  <VersionPrefix>1.2.1</VersionPrefix>
+	  <VersionPrefix>1.2.2</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
