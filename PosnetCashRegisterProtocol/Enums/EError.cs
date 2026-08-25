@@ -9,6 +9,7 @@ namespace PosnetCashRegisterProtocol.Enums;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Compliance with the documentation: SKF-I-DEV-49")]
 public enum EError : ushort
 {
+    ERR_NONE = 0,
     ERR_CANCEL = 10,
     ERR_UNKN = 50,
     ERR_ASSERT_FM = 51,
