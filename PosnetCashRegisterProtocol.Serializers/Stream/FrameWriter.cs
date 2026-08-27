@@ -1,8 +1,5 @@
 using PosnetCashRegisterProtocol.Enums;
-using System;
 using System.Buffers;
-using System.IO;
-using System.IO.Pipelines;
 
 namespace PosnetCashRegisterProtocol.Serializers.Stream;
 
@@ -17,7 +14,7 @@ public static class FrameWriter
     /// </summary>
     /// <param name="stream">Binary stream.</param>
     /// <param name="frame"><see cref="Frame"/>.</param>
-    public static void WriteFrame(this System.IO.Stream stream, Frame frame) =>
+    public static void WriteFrame(this System.IO.Stream stream, IFrame frame) =>
         WriteFrameMemory(stream, frame.FrameMemory);
 
     /// <summary>
@@ -30,7 +27,7 @@ public static class FrameWriter
     /// <returns>Awaitable task.</returns>
     public static ValueTask WriteFrameAsync(
         this System.IO.Stream stream,
-        Frame frame,
+        IFrame frame,
         CancellationToken cancellationToken) =>
         WriteFrameMemoryAsync(stream, frame.FrameMemory, cancellationToken);
 
