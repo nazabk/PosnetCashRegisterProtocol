@@ -63,7 +63,13 @@ public static class FrameWriter
         await stream.WriteAsync(buffer.Memory[..bufferLength], cancellationToken);
     }
 
-    private static void Serialize(ReadOnlyMemory<byte> frameMemory, Span<byte> buffer)
+    /// <summary>
+    /// Adds <see cref="ESpecialChar"/> control characters to <paramref name="frameMemory"/>
+    /// and writes it into <paramref name="buffer"/>.
+    /// </summary>
+    /// <param name="frameMemory">Frame memory.</param>
+    /// <param name="buffer">Output buffer.</param>
+    public static void Serialize(ReadOnlyMemory<byte> frameMemory, Span<byte> buffer)
     {
         var index = 0;
 
@@ -84,7 +90,14 @@ public static class FrameWriter
         buffer[index] = (byte)ESpecialChar.ETX;
     }
 
-    private static int CalculateBufferLength(ReadOnlyMemory<byte> memory)
+    /// <summary>
+    /// Caluclates length of <paramref name="memory"/> with added
+    /// <see cref="ESpecialChar"/> control characters.
+    /// </summary>
+    /// <param name="memory">Frame memory <see cref="Frame.FrameMemory"/>.</param>
+    /// <returns>Length of <paramref name="memory"/> plus count of added
+    /// <see cref="ESpecialChar"/> control characters.</returns>
+    public static int CalculateBufferLength(ReadOnlyMemory<byte> memory)
     {
         int length = memory.Length + 2;
         foreach (var mark in memory.Span[1..^1])
