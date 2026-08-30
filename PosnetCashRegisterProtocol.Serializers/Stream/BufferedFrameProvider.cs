@@ -10,6 +10,9 @@ namespace PosnetCashRegisterProtocol.Serializers.Stream;
 public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposable
 {
     private readonly ArrayPoolBufferWriter<byte> _buffer = new(bufferCapacity);
+    private readonly Lock _lock = new();
+
+    private bool _disposed;
 
     private bool _synDetected;
 
@@ -32,7 +35,14 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
     /// Adds new data and detects <see cref="Frame"/>.
     /// </summary>
     /// <param name="data">Input data.</param>
-    public void AddData(ReadOnlySpan<byte> data) => ReadFrames(data, _buffer, ref _synDetected);
+    public void AddData(ReadOnlySpan<byte> data)
+    {
+        lock (_lock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            ReadFrames(data, _buffer, ref _synDetected);
+        }
+    }
 
     /// <summary>
     /// Reset provider and clears its buffer.
@@ -45,7 +55,12 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
 
     public void Dispose()
     {
-        _buffer.Dispose();
+        lock (_lock)
+        {
+            if(_disposed) return;
+            _buffer.Dispose();
+            _disposed = true;
+        }
     }
 
     private void ReadFrames(ReadOnlySpan<byte> data, ArrayPoolBufferWriter<byte> buffer, ref bool synDetected)
@@ -64,7 +79,7 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
 
             if (buffer.WrittenCount >= BufferCapacity)
             {
-                DumpBuffer(buffer, "Buffer overflow.");
+                DumpBuffer(buffer, "Buffer overflow");
             }
         }
 
@@ -84,7 +99,7 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
 
             if (buffer.WrittenCount >= BufferCapacity)
             {
-                DumpBuffer(buffer, "Buffer overflow.");
+                DumpBuffer(buffer, "Buffer overflow");
             }
         }
 
@@ -96,7 +111,7 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
         switch ((ESpecialChar)value)
         {
             case ESpecialChar.STX:
-                DumpBuffer(buffer, "STX detected.");
+                DumpBuffer(buffer, "STX detected");
                 buffer.Write(value);
                 break;
 
@@ -106,7 +121,7 @@ public sealed class BufferedFrameProvider(int bufferCapacity = 1024) : IDisposab
                 break;
 
             case ESpecialChar.CAN:
-                DumpBuffer(buffer, "CAN detected.");
+                DumpBuffer(buffer, "CAN detected");
                 break;
 
             default:
